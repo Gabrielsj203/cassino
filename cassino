@@ -45,7 +45,7 @@ module.exports = [];
 
 // utils/random.js
 const seedrandom = require("seedrandom");
-module.exports = seedrandom;
+module.exports = (seed) => seedrandom(seed);
 
 // controllers/userController.js
 const users = require("../models/userModel");
@@ -80,7 +80,8 @@ exports.sacar = (req, res) => {
 const users = require("../models/userModel");
 const bets = require("../models/betModel");
 const affiliates = require("../models/affiliateModel");
-const rng = require("../utils/random")("fixed-seed");
+const createRandom = require("../utils/random");
+const rng = createRandom("fixed-seed");
 const { RTP_FIXO } = require("../config/constants");
 
 function calcularPremio(aposta) {
@@ -142,3 +143,4 @@ module.exports = router;
     "uuid": "^9.0.1"
   }
 }
+
