@@ -2,7 +2,7 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 const userRoutes = require("./routes/userRoutes");
 const betRoutes = require("./routes/betRoutes");
@@ -120,3 +120,21 @@ const { apostar } = require("../controllers/betController");
 const router = express.Router();
 router.post("/apostar", apostar);
 module.exports = router;
+
+// package.json
+{
+  "name": "backend-apostas",
+  "version": "1.0.0",
+  "description": "Backend para casa de apostas",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "bcrypt": "^5.1.0",
+    "seedrandom": "^3.0.5",
+    "uuid": "^9.0.1"
+  }
+}
