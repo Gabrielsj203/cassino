@@ -1,0 +1,122 @@
+// server.js
+const express = require("express");
+const cors = require("cors");
+const app = express();
+const port = 3000;
+
+const userRoutes = require("./routes/userRoutes");
+const betRoutes = require("./routes/betRoutes");
+const statsRoutes = require("./routes/statsRoutes");
+
+app.use(cors());
+app.use(express.json());
+
+app.use("/usuarios", userRoutes);
+app.use("/apostas", betRoutes);
+app.use("/estatisticas", statsRoutes);
+
+app.listen(port, () => {
+  console.log(`Servidor rodando na porta ${port} no ambiente ${process.env.NODE_ENV || 'desenvolvimento'}`);
+  console.log(`Acesse o servidor em: http://localhost:${port}`);
+});
+
+// config/constants.js
+module.exports = {
+  RTP_FIXO: 75,
+  LIMITE_SAQUE: 500
+};
+
+// models/userModel.js
+const bcrypt = require("bcrypt");
+module.exports = [
+  { id: 1, username: "teste", password: bcrypt.hashSync("1234", 10), saldo: 1000 }
+];
+
+// models/betModel.js
+module.exports = [];
+
+// models/affiliateModel.js
+const { v4: uuidv4 } = require("uuid");
+module.exports = [];
+
+// utils/random.js
+const seedrandom = require("seedrandom");
+module.exports = seedrandom("fixed-seed");
+
+// controllers/userController.js
+const users = require("../models/userModel");
+const bcrypt = require("bcrypt");
+const { LIMITE_SAQUE } = require("../config/constants");
+
+exports.login = (req, res) => {
+  const { username, password } = req.body;
+  const user = users.find(u => u.username === username);
+  if (user && bcrypt.compareSync(password, user.password)) {
+    res.json({ success: true, saldo: user.saldo });
+  } else {
+    res.status(401).json({ success: false, message: "Credenciais inválidas" });
+  }
+};
+
+exports.sacar = (req, res) => {
+  const { username, valor } = req.body;
+  const user = users.find(u => u.username === username);
+  if (user && user.saldo >= valor) {
+    if (valor > LIMITE_SAQUE) {
+      return res.status(400).json({ success: false, message: `O valor máximo de saque é ${LIMITE_SAQUE}` });
+    }
+    user.saldo -= valor;
+    res.json({ success: true, saldo: user.saldo, message: "Saque realizado com sucesso" });
+  } else {
+    res.status(400).json({ success: false, message: "Saldo insuficiente ou usuário não encontrado" });
+  }
+};
+
+// controllers/betController.js
+const users = require("../models/userModel");
+const bets = require("../models/betModel");
+const affiliates = require("../models/affiliateModel");
+const rng = require("../utils/random");
+const { RTP_FIXO } = require("../config/constants");
+
+function calcularPremio(aposta) {
+  const chanceGanho = RTP_FIXO / 100;
+  const ganhou = rng() < chanceGanho;
+  return { ganhou, premio: ganhou ? aposta * (1 / chanceGanho) : 0 };
+}
+
+exports.apostar = (req, res) => {
+  const { username, valor, jogo, ref } = req.body;
+  const user = users.find(u => u.username === username);
+  if (user && user.saldo >= valor) {
+    user.saldo -= valor;
+    const resultado = calcularPremio(valor);
+    if (resultado.ganhou) user.saldo += resultado.premio;
+    bets.push({ username, valor, jogo, resultado, data: new Date().toISOString() });
+    if (ref) {
+      const divulgador = affiliates.find(d => d.codigo === ref);
+      if (divulgador) {
+        divulgador.apostas += 1;
+        divulgador.comissao += valor * 0.05;
+      }
+    }
+    res.json({ success: true, saldo: user.saldo, resultado });
+  } else {
+    res.status(400).json({ success: false, message: "Saldo insuficiente" });
+  }
+};
+
+// routes/userRoutes.js
+const express = require("express");
+const { login, sacar } = require("../controllers/userController");
+const router = express.Router();
+router.post("/login", login);
+router.post("/sacar", sacar);
+module.exports = router;
+
+// routes/betRoutes.js
+const express = require("express");
+const { apostar } = require("../controllers/betController");
+const router = express.Router();
+router.post("/apostar", apostar);
+module.exports = router;
