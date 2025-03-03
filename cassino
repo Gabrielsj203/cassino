@@ -15,6 +15,10 @@ app.use("/usuarios", userRoutes);
 app.use("/apostas", betRoutes);
 app.use("/estatisticas", statsRoutes);
 
+app.get("/", (req, res) => {
+  res.send("Servidor rodando!");
+});
+
 app.listen(port, () => {
   console.log(`Servidor rodando na porta ${port} no ambiente ${process.env.NODE_ENV || 'desenvolvimento'}`);
   console.log(`Acesse o servidor em: http://localhost:${port}`);
@@ -41,7 +45,7 @@ module.exports = [];
 
 // utils/random.js
 const seedrandom = require("seedrandom");
-module.exports = seedrandom("fixed-seed");
+module.exports = seedrandom;
 
 // controllers/userController.js
 const users = require("../models/userModel");
@@ -76,7 +80,7 @@ exports.sacar = (req, res) => {
 const users = require("../models/userModel");
 const bets = require("../models/betModel");
 const affiliates = require("../models/affiliateModel");
-const rng = require("../utils/random");
+const rng = require("../utils/random")();
 const { RTP_FIXO } = require("../config/constants");
 
 function calcularPremio(aposta) {
