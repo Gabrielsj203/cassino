@@ -45,7 +45,7 @@ module.exports = [];
 
 // utils/random.js
 const seedrandom = require("seedrandom");
-module.exports = seedrandom;
+module.exports = () => seedrandom("fixed-seed");
 
 // controllers/userController.js
 const users = require("../models/userModel");
